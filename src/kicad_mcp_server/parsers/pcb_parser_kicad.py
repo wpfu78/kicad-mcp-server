@@ -102,6 +102,16 @@ class PCBParserKiCad:
             ) from e
 
         self.board = pcbnew.LoadBoard(str(self.file_path))
+        if self.board is None:
+            # LoadBoard returns None (instead of raising) for files the
+            # installed KiCad cannot read, e.g. boards written by KiCad 5 or
+            # older. Fail here with an actionable message rather than letting
+            # the first attribute access produce a cryptic NoneType error.
+            raise ValueError(
+                f"KiCad could not load '{self.file_path}'. The file may be "
+                "corrupt or saved by an unsupported (too old) KiCad version; "
+                "open and re-save it in KiCad first."
+            )
         self._pcbnew = pcbnew
 
     def _to_mm(self, iu_value: int | float) -> float:

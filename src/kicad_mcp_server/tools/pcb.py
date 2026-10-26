@@ -6,12 +6,22 @@ from ..server import mcp
 
 
 def _get_parser(file_path: str):
-    """Try pcbnew parser first, fall back to text parser."""
+    """Try the pcbnew parser first, fall back to the text parser.
+
+    The fallback is for environments without pcbnew (or without a working
+    KiCad install). Do NOT fall back when pcbnew is available but fails to
+    load the board: the text parser produces silently wrong results for such
+    files (for example an old-format board with zero footprints). Let that
+    error surface instead.
+    """
     try:
         from ..parsers.pcb_parser_kicad import PCBParserKiCad
+
         return PCBParserKiCad(file_path)
-    except (ImportError, Exception):
+    except ImportError:
+        # pcbnew itself is unavailable; the constructor raises ImportError.
         from ..parsers.pcb_parser import PCBParser
+
         return PCBParser(file_path)
 
 

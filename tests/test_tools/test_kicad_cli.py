@@ -2,7 +2,6 @@
 
 import asyncio
 import sys
-from pathlib import Path
 
 import pytest
 
@@ -106,9 +105,7 @@ class TestRunKicadCli:
         result = asyncio.run(run_kicad_cli(["-c", "import sys; sys.exit(3)"], timeout=30))
         assert result.returncode == 3
 
-    @pytest.mark.skipif(
-        not Path("C:/Program Files/KiCad").is_dir(), reason="KiCad not installed"
-    )
+    @pytest.mark.skipif(find_kicad_cli() is None, reason="KiCad not installed")
     def test_real_kicad_cli_version(self):
         """On this machine the wrapper must find and run the real kicad-cli."""
         result = run_kicad_cli_sync(["version"], timeout=30)

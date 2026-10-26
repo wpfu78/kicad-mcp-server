@@ -44,6 +44,7 @@ venv/
 env/
 ENV/
 .venv
+.venv-kicad/
 
 # Environment variables
 .env

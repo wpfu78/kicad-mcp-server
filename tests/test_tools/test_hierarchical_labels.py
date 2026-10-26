@@ -14,6 +14,7 @@ from kicad_mcp_server.tools.schematic_editor import (
     add_global_label,
     add_hierarchical_label,
 )
+from kicad_mcp_server.utils.kicad_cli import find_kicad_cli
 from kicad_mcp_server.utils.kicad_version import get_kicad_symbol_dir
 
 # Every test here places a real component first (add_component_from_library
@@ -115,9 +116,7 @@ class TestGlobalLabel:
         # (empty global labels are rejected by KiCad's loader — see E2E)
 
 
-@pytest.mark.skipif(
-    not Path("C:/Program Files/KiCad").is_dir(), reason="KiCad not installed"
-)
+@pytest.mark.skipif(find_kicad_cli() is None, reason="KiCad not installed")
 class TestCrossSheetE2E:
     def test_hierarchical_label_connects_across_sheets(self, tmp_path):
         """The issue #15 scenario end to end: a signal leaves a sub-sheet
@@ -181,7 +180,7 @@ class TestCrossSheetE2E:
         nl = tmp_path / "e2e.xml"
         rc = subprocess.run(
             [
-                r"C:/Program Files/KiCad/10.0/bin/kicad-cli.EXE",
+                find_kicad_cli(),
                 "sch", "export", "netlist", "--format", "kicadxml",
                 "--output", str(nl), str(root),
             ],

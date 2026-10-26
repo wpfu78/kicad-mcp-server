@@ -189,20 +189,28 @@ async def trace_netlist_connection(
                 "",
             ]
 
-            for net_name, net_info in result['nets'].items():
+            for net_name, pin_entries in result['nets'].items():
                 lines.append(f"### Net: {net_name}")
-                lines.append(f"**Pin:** {net_info['pin']}")
-                lines.append("")
 
-                if net_info['connected_to']:
-                    lines.append("| Reference | Pin |")
-                    lines.append("|-----------|-----|")
-                    for ref, pin in net_info['connected_to']:
-                        lines.append(f"| {ref} | {pin} |")
-                else:
-                    lines.append("No other components on this net.")
+                # The parser groups entries as a list: several pins of the
+                # same component can share one net (multiple GND pins, relay
+                # contacts). Accept a bare dict too for older callers.
+                if not isinstance(pin_entries, list):
+                    pin_entries = [pin_entries]
 
-                lines.append("")
+                for entry in pin_entries:
+                    lines.append(f"**Pin:** {entry['pin']}")
+                    lines.append("")
+
+                    if entry['connected_to']:
+                        lines.append("| Reference | Pin |")
+                        lines.append("|-----------|-----|")
+                        for ref, pin in entry['connected_to']:
+                            lines.append(f"| {ref} | {pin} |")
+                    else:
+                        lines.append("No other components on this net.")
+
+                    lines.append("")
 
             return "\n".join(lines)
 

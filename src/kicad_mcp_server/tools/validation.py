@@ -637,11 +637,22 @@ DRC check completed but failed to parse report.
 
 You can manually inspect the report file or re-run DRC in KiCad GUI."""
 
-    except FileNotFoundError:
+    except FileNotFoundError as e:
+        # Distinguish kicad-cli missing (raised by the wrapper) from a missing
+        # PCB file (already checked at the top of the function).
+        if "kicad-cli" in str(e):
+            return f"""❌ **kicad-cli Not Found**
+
+**PCB:** {pcb_path}
+
+KiCad's command-line tool (kicad-cli) could not be located on PATH or in the
+detected KiCad install directory. Install KiCad 7+ (https://www.kicad.org/),
+or point the KICAD_CLI environment variable at the kicad-cli executable."""
         return f"""❌ **File Not Found**
 
 **PCB:** {pcb_path}
 
+{e}
 Please check the file path and try again."""
     except Exception as e:
         import traceback

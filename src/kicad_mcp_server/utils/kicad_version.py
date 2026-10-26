@@ -1,6 +1,7 @@
 """KiCad installation detection and version utilities."""
 
 import re
+import sys
 from pathlib import Path
 
 _cached_install: tuple[Path, str] | None = None
@@ -12,6 +13,37 @@ def _parse_version(version_str: str) -> tuple[int, ...]:
         return tuple(int(x) for x in version_str.split("."))
     except (ValueError, AttributeError):
         return (0,)
+
+
+def _install_roots_from_interpreter() -> list[Path]:
+    """Candidate KiCad install roots implied by the running interpreter.
+
+    KiCad's bundled Python lives at ``<install>/bin/python(.exe)``, so the
+    install root is two levels up. Inside a venv ``sys.executable`` points at
+    the venv instead, so also consult ``sys._base_executable`` and the base
+    prefix. Duplicates are fine; callers only test each for ``share/kicad``.
+    """
+    roots: list[Path] = []
+
+    executables = [
+        getattr(sys, "_base_executable", None),
+        getattr(sys, "executable", None),
+    ]
+    for executable in executables:
+        if executable:
+            roots.append(Path(executable).resolve().parent.parent)
+
+    prefixes = [
+        getattr(sys, "base_prefix", None),
+        getattr(sys, "prefix", None),
+    ]
+    for prefix in prefixes:
+        if prefix:
+            prefix_path = Path(prefix).resolve()
+            roots.append(prefix_path)
+            roots.append(prefix_path.parent)
+
+    return roots
 
 
 def find_kicad_install() -> tuple[Path, str] | None:
@@ -55,6 +87,15 @@ def find_kicad_install() -> tuple[Path, str] | None:
     ]:
         if linux_base.is_dir():
             _cached_install = (linux_base, "linux")
+            return _cached_install
+
+    # Fallback: infer the install root from the running interpreter. The MCP
+    # server is normally launched from KiCad's bundled Python, whose executable
+    # lives at <install>/bin/python(.exe). That covers portable installs (for
+    # example D:/Program Files) that are not under C:/Program Files/KiCad.
+    for install_root in _install_roots_from_interpreter():
+        if (install_root / "share" / "kicad").is_dir():
+            _cached_install = (install_root, "windows")
             return _cached_install
 
     return None
