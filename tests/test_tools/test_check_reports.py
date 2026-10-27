@@ -129,6 +129,13 @@ class TestErcPositionScale:
     def test_version_fallback(self):
         assert erc_position_scale(_load("erc_kicad10_en.json"), []) == (100.0, "version")
 
+    def test_version_fallback_only_for_affected_version(self):
+        """KiCad 10.0.7 already writes mm (ERC items can carry pin UUIDs, so
+        calibration finds no match and the version fallback decides)."""
+        data = _load("erc_kicad10_en.json")
+        data["kicad_version"] = "10.0.7"
+        assert erc_position_scale(data, []) == (1.0, "report")
+
     def test_unknown_version_uses_report_units(self):
         data = _load("erc_kicad10_en.json")
         data["kicad_version"] = "9.0.0"

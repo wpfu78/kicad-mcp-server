@@ -213,8 +213,13 @@ def erc_position_scale(report: dict[str, Any], schematic_files: list[Path]) -> t
             if abs(ratio / scale - 1.0) < 0.02:
                 return scale, "calibrated"
 
-    # Examined only on KiCad 10.0.6. Examine again for each new KiCad version.
-    if str(report.get("kicad_version", "")).startswith("10."):
+    # KiCad 10.0.6 writes positions 100 times too small, although
+    # ``coordinate_units`` says "mm"; 10.0.7 writes correct mm. Match the
+    # affected version exactly — a broad "10." test would break newer
+    # releases whose ERC items cannot be calibrated (for example when the
+    # items carry pin UUIDs instead of symbol UUIDs).
+    # Examine again for each new KiCad version.
+    if str(report.get("kicad_version", "")).startswith("10.0.6"):
         return 100.0, "version"
     return 1.0, "report"
 
